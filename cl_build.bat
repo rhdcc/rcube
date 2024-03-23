@@ -9,7 +9,7 @@ SET raylib_dir=lib\raylib
 SET lib_dir=lib\raylib_build
 SET bin_dir=bin
 
-SET sources=src\main.c
+SET sources=src\main.c src\rubik.c
 
 REM Libraries to link with
 SET libs=/link /LIBPATH:%lib_dir% raylib.lib User32.lib opengl32.lib winmm.lib gdi32.lib kernel32.lib shell32.lib 
