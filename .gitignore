@@ -1,0 +1,4 @@
+bin/
+.vscode/
+lib/raylib_build
+build_raylib.bat
