@@ -36,7 +36,7 @@ void update_rubik_render_state(RubikRenderState *rs) {
           // Update cubie orientation
           rs->cubie_data[k + 1][j + 1][i + 1].orientationt = MatrixMultiply(
             rs->cubie_data[k + 1][j + 1][i + 1].orientationt,
-            MatrixRotateXYZ(Vector3Scale(axis_from_face(rs->current_animated_face), DEG2RAD * 90.f))
+            MatrixRotateXYZ(Vector3Scale(axis_from_face(rs->current_animated_face), DEG2RAD * 90.f * rs->counter_clockwise))
           );
         
           // Now update the cubie position
@@ -44,7 +44,7 @@ void update_rubik_render_state(RubikRenderState *rs) {
           Vector3 cubie_positionf = Vector3RotateByAxisAngle(
             (Vector3){ (float)cp.i, (float)cp.j, (float)cp.k },
             axis_from_face(rs->current_animated_face),
-            90.0f * DEG2RAD
+            90.0f * DEG2RAD * rs->counter_clockwise
           );
 
           // Now, fix precision issues... (Suuuper jancky, but I'm really lazy...)

@@ -24,8 +24,9 @@ typedef struct CubieData {
 } CubieData;
 
 typedef struct RubikRenderState {
-  Vector3 rotation;
+  Matrix rotationt;
   int current_animated_face;
+  int counter_clockwise;
   float move_duration;
   float elapsed_anim_time;
   CubieData cubie_data[3][3][3];

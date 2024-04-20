@@ -3,6 +3,8 @@
 #include "raymath.h"
 #include "rubik.h"
 
+#include <stdio.h>
+
 #define COL_EXPAND(color) color.r, color.g, color.b, color.a
 #define VEC3_EXPAND(vec) vec.x, vec.y, vec.z
 
@@ -87,9 +89,11 @@ void draw_cube(Vector3 position, float size) {
 
 void draw_rubiks_cube(RubikRenderState *rs, float scale) {
   rlPushMatrix();
-  rlRotatef(rs->rotation.x, 1.0f, 0.0f, 0.0f); // Rotate the entire Rubik's cube
-  rlRotatef(rs->rotation.y, 0.0f, 1.0f, 0.0f);
-  rlRotatef(rs->rotation.z, 0.0f, 0.0f, 1.0f);
+  Quaternion q = QuaternionFromMatrix(rs->rotationt);
+  Vector3 rot_axis;
+  float theta;
+  QuaternionToAxisAngle(q, &rot_axis, &theta);
+  rlRotatef(theta * RAD2DEG, VEC3_EXPAND(rot_axis));
 
   for(int k = -1; k < 2; ++k) {
     for(int j = -1; j < 2; ++j) {
@@ -99,7 +103,7 @@ void draw_rubiks_cube(RubikRenderState *rs, float scale) {
         rlPushMatrix();
         if(faces_containing(CUBIE_POS_EXPAND(cubie_position)) & (1 << rs->current_animated_face)) {
           rlRotatef(
-            (360.0f / 4) * (rs->elapsed_anim_time / rs->move_duration),
+            (360.0f / 4) * (rs->elapsed_anim_time / rs->move_duration) * rs->counter_clockwise,
             VEC3_EXPAND(axis_from_face(rs->current_animated_face))
           );
         }
@@ -109,9 +113,9 @@ void draw_rubiks_cube(RubikRenderState *rs, float scale) {
         
         Quaternion q = QuaternionFromMatrix(cubie_orientation);
         Vector3 v;
-        float an;
-        QuaternionToAxisAngle(q, &v, &an);
-        rlRotatef(an * RAD2DEG, VEC3_EXPAND(v));
+        float phi;
+        QuaternionToAxisAngle(q, &v, &phi);
+        rlRotatef(phi * RAD2DEG, VEC3_EXPAND(v));
         draw_cube((Vector3){ 0.0f, 0.0f, 0.0f }, 1.0f);
         rlPopMatrix();
       }
@@ -134,7 +138,7 @@ int main(void) {
   camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
   camera.projection = CAMERA_PERSPECTIVE;
 
-  RubikRenderState rs = { .move_duration = 0.6f };
+  RubikRenderState rs = { .move_duration = 0.6f, .rotationt = MatrixIdentity() };
   for(int k = -1; k < 2; ++k) {
     for(int j = -1; j < 2; ++j) {
       for(int i = -1; i < 2; ++i) {
@@ -148,6 +152,16 @@ int main(void) {
   while(!WindowShouldClose()) {
     float delta_time = GetFrameTime();
 
+    if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+      Vector2 mouse_delta = GetMouseDelta();
+      rs.rotationt = MatrixMultiply(
+        rs.rotationt,
+        MatrixRotateXYZ(Vector3Scale((Vector3){ mouse_delta.y, mouse_delta.x, 0.0 }, DEG2RAD))
+      ); 
+    }
+
+    if(IsKeyDown(KEY_SPACE)) rs.rotationt = MatrixIdentity();
+
     if(!rs.current_animated_face) {
       if(IsKeyDown(KEY_U)) rs.current_animated_face = Rubik_U;
       if(IsKeyDown(KEY_D)) rs.current_animated_face = Rubik_D;
@@ -155,6 +169,7 @@ int main(void) {
       if(IsKeyDown(KEY_B)) rs.current_animated_face = Rubik_B;
       if(IsKeyDown(KEY_L)) rs.current_animated_face = Rubik_L;
       if(IsKeyDown(KEY_R)) rs.current_animated_face = Rubik_R;
+      rs.counter_clockwise = (IsKeyDown(KEY_RIGHT_SHIFT) || IsKeyDown(KEY_LEFT_SHIFT)) ? 1 : -1;
     }
 
     if(rs.elapsed_anim_time == rs.move_duration) {
